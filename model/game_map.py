@@ -1,12 +1,18 @@
 import pytiled_parser as pp
-import arcade
 
 
 
 class MapModel:
-    def __init__(self):
-        # карта - затычка 
-        self.map = pp.parse_map("")
-        # arcade.tilemap.process_layer("Слой тайлов 1")
+    def __init__(self, width=60, height=60):
+        # карта - затычка
+        self.width = width
+        self.height = height
+        # шаблон клеток - Затычка
+        self.grid = [[0 for _ in range(width)] for _ in range(height)]
+
+    #
+    def load_from_tmx(self, tmx):
+        pass
+
         
     
