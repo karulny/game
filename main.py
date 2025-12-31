@@ -1,5 +1,5 @@
 import arcade
-
+from view.main_menu_view import MainMenuView
 from controller.input_controller import InputController
 from view.game_view import GameView
 from model.game_map import GameMapModel
@@ -17,7 +17,9 @@ def main():
     game_view = GameView(tile_map, game_state, game_model, input_controller)
 
     game_view.setup()
-    window.show_view(game_view)
+    menu_view = MainMenuView(game_view)
+
+    window.show_view(menu_view)
     arcade.run()
 
 if __name__ == "__main__":
