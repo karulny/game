@@ -1,6 +1,7 @@
 class UnitModel:
-    def __init__(self, x, y):
+    def __init__(self, x, y, name):
         self.x = x
         self.y = y
         self.selected = False
         self.speed = 3
+        self.name = name
