@@ -7,5 +7,4 @@ class GameState:
         self.add_unit()
 
     def add_unit(self):
-        unit_stats = (400, 300, "crossbowmen")
-        self.units.append(UnitModel(*unit_stats))
+        pass
