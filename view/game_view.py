@@ -1,6 +1,7 @@
 import arcade
 
 from controller.input_controller import InputController
+from .sprites import Unit
 
 
 class GameView(arcade.View):
@@ -19,45 +20,40 @@ class GameView(arcade.View):
         # Инициализируем сцену из карты
         self.scene = arcade.Scene.from_tilemap(self.tile_map)
 
-        # Инициализируем список юнитов и добавляем его в общую сцену
-        # Важно: слой "Units" должен быть создан, чтобы scene.draw() его увидела
         self.unit_sprites = arcade.SpriteList()
         self.scene.add_sprite_list("Units", sprite_list=self.unit_sprites)
+        self.add_crossbowmen()
 
-        # 1. Загружаем спрайтшит
+    def on_draw(self):
+        self.clear()
 
+        self.scene.draw()
+
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        # Находим, по кому кликнули
+        hit_sprites = arcade.get_sprites_at_point((x, y), self.unit_sprites)
+
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            if hit_sprites:
+                self.input_controller.select_unit(hit_sprites[0])
+            else:
+                self.input_controller.on_mouse_pressed(x, y)
+
+    def on_update(self, delta_time: float) -> bool | None:
+        self.scene.update(delta_time)
+
+    def add_crossbowmen(self):
         spritesheet = arcade.load_spritesheet("resources/units/crossbowmen.png")
 
         # ИСПРАВЛЕНИЕ: Используем get_texture_grid вместо get_image_grid
         texture_list = spritesheet.get_texture_grid(
             size=(32, 32),
             columns=7,
-            count=7
+            count=7,
+            hit_box_algorithm=arcade.hitbox.algo_detailed
         )
 
-        # 2. Создаем спрайт юнита
-        unit = arcade.Sprite()
-        # Присваиваем текстуру (теперь это arcade.Texture, а не PIL Image)
-        unit.texture = texture_list[0]
-
-        # Координаты
-        unit.center_x = 100
-        unit.center_y = 100
-        unit.scale = 3.0
+        unit = Unit(200, 200, texture_list=texture_list)
 
         # Добавляем спрайт в список
         self.unit_sprites.append(unit)
-
-    def on_draw(self):
-        self.clear()
-
-        # scene.draw() отрисует и карту, и юнитов (так как мы их добавили в сцену)
-        self.scene.draw()
-
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            # Передаем координаты клика в контроллер
-            self.input_controller.on_key_pressed(x, y)
-
-    def on_update(self, delta_time: float) -> bool | None:
-        pass
