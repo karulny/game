@@ -34,6 +34,4 @@ class GameMapModel:
 
     def is_passable(self, x, y) -> bool:
         """Метод для проверки: можно ли пройти в клетку x, y"""
-        if self.grid[y][x]:
-            return self.grid[y][x] == 1
-        return False
+        return True

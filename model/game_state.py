@@ -1,10 +1,8 @@
-from .units_and_buildings import UnitModel
-
 class GameState:
     def __init__(self):
-        self.gold = 400
         self.units = []
-        self.add_unit()
+        self.selected_unit = None
 
-    def add_unit(self):
-        pass
+    def update(self, dt, game_map):
+        for unit in self.units:
+            unit.update(dt, game_map)
