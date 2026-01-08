@@ -23,6 +23,7 @@ class GameView(arcade.View):
         self.unit_sprites = arcade.SpriteList()
         self.scene.add_sprite_list("Units", sprite_list=self.unit_sprites)
         self.add_crossbowmen()
+        self.add_crossbowmen()
 
     def on_draw(self):
         self.clear()
@@ -30,13 +31,15 @@ class GameView(arcade.View):
         self.scene.draw()
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        # Находим, по кому кликнули
+        # Проверяем наличие спрайтов в точке клика
         hit_sprites = arcade.get_sprites_at_point((x, y), self.unit_sprites)
 
         if button == arcade.MOUSE_BUTTON_LEFT:
             if hit_sprites:
+                # Клик по юниту (выбор или отмена выбора)
                 self.input_controller.select_unit(hit_sprites[0])
-            else:
+            elif self.input_controller.selected_unit:
+                # Клик по пустому месту ПРИ наличии выбранного юнита — движение
                 self.input_controller.on_mouse_pressed(x, y)
 
     def on_update(self, delta_time: float) -> bool | None:
