@@ -1,30 +1,18 @@
-import arcade
-
+# controller/input_controller.py
 
 class InputController:
-    def __init__(self, game_map, game_state):
-        self.game_state = game_state
-        self.game_map = game_map
-        self.selected_unit = None
+    def __init__(self, game_state):
+        self.state = game_state
 
-    def select_unit(self, unit):
-        # Если мы кликнули по тому же самому юниту, который уже выбран
-        if self.selected_unit == unit:
-            self.selected_unit.color = arcade.color.WHITE  # Возвращаем обычный цвет
-            self.selected_unit = None  # Снимаем выделение
-            print("Выделение снято")
-            return
+    # === ВЫБОР ЮНИТА ===
+    def select_unit(self, unit_model):
+        # если кликнули по тому же — снимаем выделение
+        if self.state.selected_unit == unit_model:
+            self.state.selected_unit = None
+        else:
+            self.state.selected_unit = unit_model
 
-        # Если выбран другой юнит, сначала сбрасываем цвет у старого
-        if self.selected_unit:
-            self.selected_unit.color = arcade.color.WHITE
-
-        # Выделяем новый юнит
-        self.selected_unit = unit
-        if self.selected_unit:
-            self.selected_unit.color = arcade.color.LIGHT_GREEN
-            print("Юнит выбран")
-
-    def on_mouse_pressed(self, x: int, y: int) -> None:
-        if self.selected_unit is not None:
-            self.selected_unit.move(x, y)
+    # === КОМАНДА ДВИЖЕНИЯ ===
+    def move_selected_unit(self, x, y):
+        if self.state.selected_unit:
+            self.state.selected_unit.set_target(x, y)

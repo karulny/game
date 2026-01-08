@@ -1,62 +1,68 @@
 import arcade
 
-from controller.input_controller import InputController
-from .sprites import Unit
+from view.unit_sprite import UnitSprite
 
 
 class GameView(arcade.View):
-    def __init__(self, tile_map: arcade.TileMap, game_state, game_model, input_controller: InputController):
+    def __init__(self, tile_map, game_state, game_model, input_controller):
         super().__init__()
-        self.tile_map = tile_map
-        self.scene = None
-        self.input_controller = input_controller
-        self.game_state = game_state
-        self.game_model = game_model
 
-        # Списки спрайтов
-        self.unit_sprites = None
+        self.state = game_state
+        self.game_map = game_model
+        self.controller = input_controller
 
-    def setup(self):
-        # Инициализируем сцену из карты
-        self.scene = arcade.Scene.from_tilemap(self.tile_map)
+        # Сцена
+        self.scene = arcade.Scene.from_tilemap(tile_map)
 
+        # Юниты
         self.unit_sprites = arcade.SpriteList()
         self.scene.add_sprite_list("Units", sprite_list=self.unit_sprites)
-        self.add_crossbowmen()
-        self.add_crossbowmen()
 
-    def on_draw(self):
-        self.clear()
+    def setup(self):
+        """
+        Создаём Sprite для каждой модели
+        """
+        spritesheet = arcade.load_spritesheet(
+            "resources/units/crossbowmen.png"
+        )
 
-        self.scene.draw()
-
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        # Проверяем наличие спрайтов в точке клика
-        hit_sprites = arcade.get_sprites_at_point((x, y), self.unit_sprites)
-
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            if hit_sprites:
-                # Клик по юниту (выбор или отмена выбора)
-                self.input_controller.select_unit(hit_sprites[0])
-            elif self.input_controller.selected_unit:
-                # Клик по пустому месту ПРИ наличии выбранного юнита — движение
-                self.input_controller.on_mouse_pressed(x, y)
-
-    def on_update(self, delta_time: float) -> bool | None:
-        self.scene.update(delta_time)
-
-    def add_crossbowmen(self):
-        spritesheet = arcade.load_spritesheet("resources/units/crossbowmen.png")
-
-        # ИСПРАВЛЕНИЕ: Используем get_texture_grid вместо get_image_grid
-        texture_list = spritesheet.get_texture_grid(
+        textures = spritesheet.get_texture_grid(
             size=(32, 32),
             columns=7,
             count=7,
             hit_box_algorithm=arcade.hitbox.algo_detailed
         )
 
-        unit = Unit(200, 200, texture_list=texture_list)
+        for unit_model in self.state.units:
+            sprite = UnitSprite(unit_model, textures)
+            self.unit_sprites.append(sprite)
 
-        # Добавляем спрайт в список
-        self.unit_sprites.append(unit)
+    def on_draw(self):
+        self.clear()
+        self.scene.draw()
+
+    def on_update(self, dt):
+        # обновляем МОДЕЛЬ
+        self.state.update(dt, self.game_map)
+
+        # синхронизируем Sprite ← Model
+        for sprite in self.unit_sprites:
+            is_selected = sprite.model == self.state.selected_unit
+            sprite.sync_from_model(is_selected)
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        if button != arcade.MOUSE_BUTTON_LEFT:
+            return
+
+        # проверяем клик по спрайту
+        hit_sprites = arcade.get_sprites_at_point(
+            (x, y),
+            self.unit_sprites
+        )
+
+        if hit_sprites:
+            # выбираем МОДЕЛЬ, а не Sprite
+            self.controller.select_unit(hit_sprites[0].model)
+        else:
+            # команда движения
+            self.controller.move_selected_unit(x, y)
