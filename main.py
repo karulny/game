@@ -16,7 +16,6 @@ SCREEN_TITLE = "RTS Prototype"
 
 
 def main():
-    # 1️⃣ Создаём окно
     window = arcade.Window(
         width=SCREEN_WIDTH,
         height=SCREEN_HEIGHT,
@@ -24,24 +23,19 @@ def main():
         resizable=True
     )
 
-    # 2️⃣ Загружаем карту
     tile_map = arcade.load_tilemap(
         "resources/maps/map.tmx",
         scaling=1
     )
 
-    # 3️⃣ MODEL
     game_map_model = GameMapModel(tile_map)
     game_state = GameState()
 
-    # Создаём юниты (ТОЛЬКО модель)
     game_state.units.append(UnitModel(200, 200))
     game_state.units.append(UnitModel(260, 200))
 
-    # 4️⃣ CONTROLLER
     input_controller = InputController(game_state)
 
-    # 5️⃣ VIEW
     game_view = GameView(
         tile_map=tile_map,
         game_state=game_state,
@@ -51,7 +45,6 @@ def main():
 
     game_view.setup()
 
-    # (если меню не нужно — можно сразу показать game_view)
     menu_view = MainMenuView(game_view)
     window.show_view(menu_view)
 

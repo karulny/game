@@ -6,3 +6,6 @@ class GameState:
     def update(self, dt, game_map):
         for unit in self.units:
             unit.update(dt, game_map)
+
+    def find_nearest_enemy(self, unit):
+        pass

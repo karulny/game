@@ -42,27 +42,8 @@ class GameView(arcade.View):
         self.scene.draw()
 
     def on_update(self, dt):
-        # обновляем МОДЕЛЬ
-        self.state.update(dt, self.game_map)
-
-        # синхронизируем Sprite ← Model
-        for sprite in self.unit_sprites:
-            is_selected = sprite.model == self.state.selected_unit
-            sprite.sync_from_model(is_selected)
+        for unit in self.unit_sprites:
+            unit.update(dt, self)
 
     def on_mouse_press(self, x, y, button, modifiers):
-        if button != arcade.MOUSE_BUTTON_LEFT:
-            return
-
-        # проверяем клик по спрайту
-        hit_sprites = arcade.get_sprites_at_point(
-            (x, y),
-            self.unit_sprites
-        )
-
-        if hit_sprites:
-            # выбираем МОДЕЛЬ, а не Sprite
-            self.controller.select_unit(hit_sprites[0].model)
-        else:
-            # команда движения
-            self.controller.move_selected_unit(x, y)
+        pass
