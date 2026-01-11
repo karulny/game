@@ -56,8 +56,8 @@ class GameWindow(arcade.Window):
     def on_update(self, delta_time):
         self.game_state.update(delta_time)
 
-    # def on_mouse_press(self, x, y, button, modifiers):
-    #     self.input_controller.on_mouse_press(x, y, button)
+    def on_mouse_press(self, x, y, button, modifiers):
+        self.game_view.on_mouse_press(x, y, button, modifiers)
 
 
 def main():

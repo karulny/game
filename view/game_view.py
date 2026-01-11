@@ -9,7 +9,7 @@ class GameView(arcade.View):
 
         self.game_state = game_state
         self.game_map = game_model
-        self.controller = input_controller
+        self.input_controller = input_controller
         self.camera = arcade.camera.Camera2D()
 
         # Сцена
@@ -44,13 +44,29 @@ class GameView(arcade.View):
 
         for unit in self.game_state.units:
             self.draw_unit(unit)
+            arcade.draw_line(
+                unit.x,
+                unit.y,
+                unit.target_x,
+                unit.target_y,
+                arcade.color.YELLOW
+            )
 
     def on_update(self, dt):
         for unit in self.unit_sprites:
             unit.update(dt, self)
 
-    def on_mouse_press(self, x, y, button, modifiers):
-        pass
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        # Проверяем наличие спрайтов в точке клика
+        hit_sprites = arcade.get_sprites_at_point((x, y), self.unit_sprites)
+        print("pressed")
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            if hit_sprites:
+                # Клик по юниту (выбор или отмена выбора)
+                self.input_controller.select_unit(hit_sprites[0])
+            elif self.input_controller.selected_unit:
+                # Клик по пустому месту ПРИ наличии выбранного юнита — движение
+                self.input_controller.on_mouse_pressed(x, y)
 
 
     def draw_unit(self, unit):

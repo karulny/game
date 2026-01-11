@@ -2,6 +2,7 @@ import arcade
 
 PLAYER_ID = 1
 
+
 class UnitSprite(arcade.Sprite):
     def __init__(self, model, textures):
         super().__init__()
@@ -15,3 +16,7 @@ class UnitSprite(arcade.Sprite):
             self.color = arcade.color.WHITE
         else:
             self.color = arcade.color.RED
+
+    def update(self, delta_time):
+        self.center_x = self.model.x
+        self.center_y = self.model.y
