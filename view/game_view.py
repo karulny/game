@@ -7,9 +7,10 @@ class GameView(arcade.View):
     def __init__(self, tile_map, game_state, game_model, input_controller):
         super().__init__()
 
-        self.state = game_state
+        self.game_state = game_state
         self.game_map = game_model
         self.controller = input_controller
+        self.camera = arcade.camera.Camera2D()
 
         # Сцена
         self.scene = arcade.Scene.from_tilemap(tile_map)
@@ -33,7 +34,7 @@ class GameView(arcade.View):
             hit_box_algorithm=arcade.hitbox.algo_detailed
         )
 
-        for unit_model in self.state.units:
+        for unit_model in self.game_state.units:
             sprite = UnitSprite(unit_model, textures)
             self.unit_sprites.append(sprite)
 
@@ -41,9 +42,23 @@ class GameView(arcade.View):
         self.clear()
         self.scene.draw()
 
+        for unit in self.game_state.units:
+            self.draw_unit(unit)
+
     def on_update(self, dt):
         for unit in self.unit_sprites:
             unit.update(dt, self)
 
     def on_mouse_press(self, x, y, button, modifiers):
         pass
+
+
+    def draw_unit(self, unit):
+        color = arcade.color.BLUE if unit.team == 0 else arcade.color.RED
+
+        arcade.draw_circle_filled(
+            unit.x,
+            unit.y,
+            unit.radius,
+            color
+        )
