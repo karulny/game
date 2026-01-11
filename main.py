@@ -62,6 +62,7 @@ class GameWindow(arcade.Window):
 
 def main():
     window = GameWindow()
+    window.game_view.setup()
     arcade.run()
 
 
