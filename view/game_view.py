@@ -40,37 +40,8 @@ class GameView(arcade.View):
         self.clear()
         self.scene.draw()
 
-        # Рисуем юнитов (круги для отладки)
-        for unit in self.game_state.units:
-            self.draw_unit(unit)
+        self._draw_unit_stats()
 
-            # Линия к цели движения
-            if unit.state == UnitState.MOVE:
-                arcade.draw_line(
-                    unit.x, unit.y,
-                    unit.target_x, unit.target_y,
-                    arcade.color.YELLOW, 2
-                )
-
-            # Линия атаки
-            elif unit.state == UnitState.ATTACK and unit.target_enemy:
-                arcade.draw_line(
-                    unit.x, unit.y,
-                    unit.target_enemy.x, unit.target_enemy.y,
-                    arcade.color.RED, 3
-                )
-
-            # Круг радиуса атаки для выбранного юнита
-            if self.game_state.selected_unit == unit:
-                arcade.draw_circle_outline(
-                    unit.x, unit.y,
-                    unit.attack_range,
-                    arcade.color.RED_ORANGE, 2
-                )
-
-        # HP бары
-        for unit in self.game_state.units:
-            self.draw_health_bar(unit)
 
     def on_update(self, dt):
         """Обновление спрайтов"""
@@ -152,8 +123,8 @@ class GameView(arcade.View):
                 unit.radius + 3,
                 arcade.color.WHITE, 3
             )
-
-    def draw_health_bar(self, unit):
+    @staticmethod
+    def _draw_health_bar(unit):
         """Рисуем HP бар над юнитом"""
         bar_width = 30
         bar_height = 4
@@ -174,3 +145,29 @@ class GameView(arcade.View):
                y - bar_height / 2, y + bar_height / 2,
             arcade.color.GREEN
         )
+
+    def _draw_unit_stats(self):
+        for unit in self.game_state.units:
+            self._draw_health_bar(unit)
+            if unit.state == UnitState.MOVE:
+                arcade.draw_line(
+                    unit.x, unit.y,
+                    unit.target_x, unit.target_y,
+                    arcade.color.YELLOW, 2
+                )
+
+            # Линия атаки
+            elif unit.state == UnitState.ATTACK and unit.target_enemy:
+                arcade.draw_line(
+                    unit.x, unit.y,
+                    unit.target_enemy.x, unit.target_enemy.y,
+                    arcade.color.RED, 3
+                )
+
+            # Круг радиуса атаки для выбранного юнита
+            if self.game_state.selected_unit == unit:
+                arcade.draw_circle_outline(
+                    unit.x, unit.y,
+                    unit.attack_range,
+                    arcade.color.RED_ORANGE, 2
+                )
