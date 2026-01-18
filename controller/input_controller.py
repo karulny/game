@@ -2,29 +2,41 @@ import arcade
 
 
 class InputController:
-    def __init__(self, game_map, game_state):
+    def __init__(self, game_state):
         self.game_state = game_state
-        self.game_map = game_map
         self.selected_unit = None
 
-    def select_unit(self, unit):
-        # Если мы кликнули по тому же самому юниту, который уже выбран
-        if self.selected_unit == unit:
-            self.selected_unit.color = arcade.color.WHITE  # Возвращаем обычный цвет
-            self.selected_unit = None  # Снимаем выделение
+    def on_mouse_press(self, x, y, button):
+        """Обработка клика мыши"""
+        if button == arcade.MOUSE_BUTTON_RIGHT:
+            # ПКМ - команда на движение
+            if self.selected_unit:
+                self.selected_unit.model.move_to(x, y)
+
+        elif button == arcade.MOUSE_BUTTON_LEFT:
+            # ЛКМ обрабатывается в game_view
+            pass
+
+    def select_unit(self, unit_sprite):
+        """Выделение/снятие выделения юнита"""
+        # Если кликнули по тому же юниту - снимаем выделение
+        if self.selected_unit == unit_sprite:
+            self.selected_unit.color = arcade.color.WHITE
+            self.selected_unit = None
+            self.game_state.selected_unit = None
             print("Выделение снято")
             return
 
-        # Если выбран другой юнит, сначала сбрасываем цвет у старого
+        # Сбрасываем цвет у предыдущего юнита
         if self.selected_unit:
             self.selected_unit.color = arcade.color.WHITE
 
         # Выделяем новый юнит
-        self.selected_unit = unit
-        if self.selected_unit:
-            self.selected_unit.color = arcade.color.LIGHT_GREEN
-            print("Юнит выбран")
+        self.selected_unit = unit_sprite
+        self.game_state.selected_unit = unit_sprite.model
 
-    def on_mouse_pressed(self, x: int, y: int) -> None:
-        if self.selected_unit is not None:
-            self.selected_unit.move(x, y)
+        # Подсвечиваем выбранный юнит
+        if unit_sprite.model.team == 1:
+            self.selected_unit.color = arcade.color.LIGHT_GREEN
+
+        print(f"Юнит выбран (Team {unit_sprite.model.team})")

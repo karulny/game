@@ -1,10 +1,24 @@
-from .units_and_buildings import UnitModel
-
 class GameState:
-    def __init__(self):
-        self.gold = 400
+    def __init__(self, game_map, tile_width, tile_height):
         self.units = []
-        self.add_unit()
+        self.selected_unit = None
+        self.game_map = game_map
+        self.tile_width = tile_width
+        self.tile_height = tile_height
 
-    def add_unit(self):
+    def find_nearest_enemy(self, unit):
         pass
+
+    def update(self, delta_time):
+        for unit in self.units[:]:
+            if unit.hp <= 0:
+                self.units.remove(unit)
+                continue
+
+            unit.update(
+                delta_time,
+                self.game_map,
+                self.units,
+                self.tile_width,
+                self.tile_height
+            )
