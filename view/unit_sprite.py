@@ -1,4 +1,8 @@
 import arcade
+from model.unit_model import UnitState
+
+PLAYER_ID = 1
+
 
 class UnitSprite(arcade.Sprite):
     def __init__(self, model, textures):
@@ -8,11 +12,42 @@ class UnitSprite(arcade.Sprite):
         self.texture = textures[0]
         self.scale = 2.0
 
-    def sync_from_model(self, is_selected=False):
+        # Анимация
+        self.current_texture = 0
+        self.animation_speed = 0.1
+        self.time_since_last_frame = 0
+
+    def sync_from_model(self):
+        """Синхронизация визуала с моделью"""
+        if self.model.team == PLAYER_ID:
+            self.color = arcade.color.WHITE
+        else:
+            self.color = arcade.color.RED
+
+    def update(self, delta_time):
+        """Обновление позиции и анимации"""
+        # Синхронизация позиции
         self.center_x = self.model.x
         self.center_y = self.model.y
 
-        if is_selected:
-            self.color = arcade.color.GREEN
+        # Анимация в зависимости от состояния
+        if self.model.state == UnitState.MOVE:
+            self._animate(delta_time, 0, 3)  # Текстуры 0-3 для ходьбы
+        elif self.model.state == UnitState.ATTACK:
+            self._animate(delta_time, 4, 6)  # Текстуры 4-6 для атаки
         else:
-            self.color = arcade.color.WHITE
+            self.current_texture = 0
+            self.texture = self.textures[0]
+
+    def _animate(self, delta_time, start_frame, end_frame):
+        """Простая анимация по кадрам"""
+        self.time_since_last_frame += delta_time
+
+        if self.time_since_last_frame > self.animation_speed:
+            self.time_since_last_frame = 0
+            self.current_texture += 1
+
+            if self.current_texture > end_frame:
+                self.current_texture = start_frame
+
+            self.texture = self.textures[self.current_texture]

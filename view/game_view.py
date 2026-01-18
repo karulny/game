@@ -1,15 +1,16 @@
 import arcade
-
 from view.unit_sprite import UnitSprite
+from model.unit_model import UnitState
 
 
 class GameView(arcade.View):
     def __init__(self, tile_map, game_state, game_model, input_controller):
         super().__init__()
 
-        self.state = game_state
+        self.game_state = game_state
         self.game_map = game_model
-        self.controller = input_controller
+        self.input_controller = input_controller
+        self.camera = arcade.camera.Camera2D()
 
         # Сцена
         self.scene = arcade.Scene.from_tilemap(tile_map)
@@ -19,9 +20,7 @@ class GameView(arcade.View):
         self.scene.add_sprite_list("Units", sprite_list=self.unit_sprites)
 
     def setup(self):
-        """
-        Создаём Sprite для каждой модели
-        """
+        """Создаём Sprite для каждой модели"""
         spritesheet = arcade.load_spritesheet(
             "resources/units/crossbowmen.png"
         )
@@ -33,7 +32,7 @@ class GameView(arcade.View):
             hit_box_algorithm=arcade.hitbox.algo_detailed
         )
 
-        for unit_model in self.state.units:
+        for unit_model in self.game_state.units:
             sprite = UnitSprite(unit_model, textures)
             self.unit_sprites.append(sprite)
 
@@ -41,28 +40,137 @@ class GameView(arcade.View):
         self.clear()
         self.scene.draw()
 
+        # Рисуем юнитов (круги для отладки)
+        for unit in self.game_state.units:
+            self.draw_unit(unit)
+
+            # Линия к цели движения
+            if unit.state == UnitState.MOVE:
+                arcade.draw_line(
+                    unit.x, unit.y,
+                    unit.target_x, unit.target_y,
+                    arcade.color.YELLOW, 2
+                )
+
+            # Линия атаки
+            elif unit.state == UnitState.ATTACK and unit.target_enemy:
+                arcade.draw_line(
+                    unit.x, unit.y,
+                    unit.target_enemy.x, unit.target_enemy.y,
+                    arcade.color.RED, 3
+                )
+
+            # Круг радиуса атаки для выбранного юнита
+            if self.game_state.selected_unit == unit:
+                arcade.draw_circle_outline(
+                    unit.x, unit.y,
+                    unit.attack_range,
+                    arcade.color.RED_ORANGE, 2
+                )
+
+        # HP бары
+        for unit in self.game_state.units:
+            self.draw_health_bar(unit)
+
     def on_update(self, dt):
-        # обновляем МОДЕЛЬ
-        self.state.update(dt, self.game_map)
-
-        # синхронизируем Sprite ← Model
+        """Обновление спрайтов"""
         for sprite in self.unit_sprites:
-            is_selected = sprite.model == self.state.selected_unit
-            sprite.sync_from_model(is_selected)
+            sprite.update(dt)
 
-    def on_mouse_press(self, x, y, button, modifiers):
-        if button != arcade.MOUSE_BUTTON_LEFT:
-            return
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        """Обработка кликов"""
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            # ЛКМ - выбор юнита (по кругу радиуса)
+            clicked_unit = None
 
-        # проверяем клик по спрайту
-        hit_sprites = arcade.get_sprites_at_point(
-            (x, y),
-            self.unit_sprites
+            for unit_model in self.game_state.units:
+                dx = x - unit_model.x
+                dy = y - unit_model.y
+                dist = (dx * dx + dy * dy) ** 0.5
+
+                if dist <= unit_model.radius:
+                    clicked_unit = unit_model
+                    break
+
+            if clicked_unit:
+                # Выбираем только своих юнитов (team 1)
+                if clicked_unit.team == 1:
+                    # Находим соответствующий спрайт
+                    for sprite in self.unit_sprites:
+                        if sprite.model == clicked_unit:
+                            self.input_controller.select_unit(sprite)
+                            break
+            else:
+                # Клик по пустому месту - сброс выделения
+                if self.input_controller.selected_unit:
+                    self.input_controller.selected_unit.color = arcade.color.WHITE
+                    self.input_controller.selected_unit = None
+                    self.game_state.selected_unit = None
+
+        elif button == arcade.MOUSE_BUTTON_RIGHT:
+            # ПКМ - команда на движение/атаку
+            if self.input_controller.selected_unit:
+                # Проверяем, кликнули ли по вражескому юниту
+                clicked_enemy = None
+
+                for unit_model in self.game_state.units:
+                    if unit_model.team == 1:  # Пропускаем своих
+                        continue
+
+                    dx = x - unit_model.x
+                    dy = y - unit_model.y
+                    dist = (dx * dx + dy * dy) ** 0.5
+
+                    if dist <= unit_model.radius:
+                        clicked_enemy = unit_model
+                        break
+
+                if clicked_enemy:
+                    # Атаковать врага
+                    selected_model = self.input_controller.selected_unit.model
+                    selected_model.target_enemy = clicked_enemy
+                    selected_model.state = UnitState.ATTACK
+                    print(f"Атака врага!")
+                else:
+                    # Двигаться к точке
+                    self.input_controller.on_mouse_press(x, y, button)
+
+    def draw_unit(self, unit):
+        """Рисуем круг юнита"""
+        color = arcade.color.BLUE if unit.team == 0 else arcade.color.GREEN
+
+        # Подсветка если юнит атакует
+        if unit.state == UnitState.ATTACK:
+            color = arcade.color.ORANGE
+
+        arcade.draw_circle_filled(unit.x, unit.y, unit.radius, color)
+
+        # Обводка для выбранного
+        if self.game_state.selected_unit == unit:
+            arcade.draw_circle_outline(
+                unit.x, unit.y,
+                unit.radius + 3,
+                arcade.color.WHITE, 3
+            )
+
+    def draw_health_bar(self, unit):
+        """Рисуем HP бар над юнитом"""
+        bar_width = 30
+        bar_height = 4
+        x = unit.x - bar_width / 2
+        y = unit.y + unit.radius + 5
+
+        # Фон (красный)
+        arcade.draw_lrbt_rectangle_filled(
+            x, x + bar_width,
+               y - bar_height / 2, y + bar_height / 2,
+            arcade.color.RED
         )
 
-        if hit_sprites:
-            # выбираем МОДЕЛЬ, а не Sprite
-            self.controller.select_unit(hit_sprites[0].model)
-        else:
-            # команда движения
-            self.controller.move_selected_unit(x, y)
+        # HP (зелёный)
+        hp_percent = unit.hp / 100.0
+        arcade.draw_lrbt_rectangle_filled(
+            x, x + (bar_width * hp_percent),
+               y - bar_height / 2, y + bar_height / 2,
+            arcade.color.GREEN
+        )
