@@ -6,9 +6,6 @@ class GameState:
         self.tile_width = tile_width
         self.tile_height = tile_height
 
-    def find_nearest_enemy(self, unit):
-        pass
-
     def update(self, delta_time):
         for unit in self.units[:]:
             if unit.hp <= 0:
