@@ -1,70 +1,59 @@
 import arcade
-
+import config
 from models.game_map import GameMapModel
 from models.game_state import GameState
 from models.unit_model import UnitModel
-
 from controllers.input_controller import InputController
 from views.game_view import GameView
 
 
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
-SCREEN_TITLE = "RTS Prototype"
-
-
-class GameWindow(arcade.Window):
-    def __init__(self):
-        super().__init__(
-            width=SCREEN_WIDTH,
-            height=SCREEN_HEIGHT,
-            title=SCREEN_TITLE,
-            resizable=True
-        )
-
-        self.tile_map = arcade.load_tilemap(
-            "resources/maps/map.tmx",
-            scaling=1
-        )
-
-        self.game_map_model = GameMapModel(self.tile_map)
-
-        self.tile_width = self.tile_map.tile_width * self.tile_map.scaling
-        self.tile_height = self.tile_map.tile_height * self.tile_map.scaling
-
-        self.game_state = GameState(
-            game_map=self.game_map_model,
-            tile_width=self.tile_width,
-            tile_height=self.tile_height
-        )
-
-        self.game_state.units.append(UnitModel(200, 200, team=1))
-        self.game_state.units.append(UnitModel(260, 200, team=0))
-
-        self.input_controller = InputController(self.game_state)
-        self.game_view = GameView(
-            tile_map=self.tile_map,
-            game_state=self.game_state,
-            input_controller=self.input_controller,
-            game_model=self.game_map_model
-        )
-        self.game_view.setup()
-
-    def on_draw(self):
-        self.clear()
-        self.game_view.on_draw()
-
-    def on_update(self, delta_time):
-        self.game_view.on_update(delta_time)
-        self.game_state.update(delta_time)
-
-    def on_mouse_press(self, x, y, button, modifiers):
-        self.game_view.on_mouse_press(x, y, button, modifiers)
-
-
 def main():
-    window = GameWindow()
-    window.game_view.setup()
+    # Создаём окно
+    window = arcade.Window(
+        width=config.SCREEN_WIDTH,
+        height=config.SCREEN_HEIGHT,
+        title=config.SCREEN_TITLE,
+        resizable=True
+    )
+
+    # Загружаем карту
+    tile_map = arcade.load_tilemap(
+        config.MAP_PATH,
+        scaling=config.TILE_SCALING
+    )
+
+    # Создаём модель карты
+    game_map_model = GameMapModel(tile_map)
+
+    tile_width = tile_map.tile_width * tile_map.scaling
+    tile_height = tile_map.tile_height * tile_map.scaling
+
+    # Создаём состояние игры
+    game_state = GameState(
+        game_map=game_map_model,
+        tile_width=tile_width,
+        tile_height=tile_height
+    )
+
+    # Добавляем юнитов
+    game_state.units.append(UnitModel(200, 200, team=config.PLAYER_TEAM))
+    game_state.units.append(UnitModel(260, 200, team=config.ENEMY_TEAM))
+
+    # Создаём контроллер
+    input_controller = InputController(game_state)
+
+    # Создаём игровое представление
+    game_view = GameView(
+        tile_map=tile_map,
+        game_state=game_state,
+        input_controller=input_controller,
+        game_model=game_map_model
+    )
+
+    # Показываем игровое представление
+    window.show_view(game_view)
+
+    # Запускаем игру
     arcade.run()
 
 

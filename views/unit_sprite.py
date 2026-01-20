@@ -1,5 +1,5 @@
 import arcade
-from model.unit_model import UnitState
+from models.unit_model import UnitState
 
 PLAYER_ID = 1
 
@@ -20,7 +20,7 @@ class UnitSprite(arcade.Sprite):
     def sync_from_model(self):
         """Синхронизация визуала с моделью"""
         if self.model.team == PLAYER_ID:
-            self.color = arcade.color.WHITE
+            self.color = arcade.color.LIGHT_GREEN
         else:
             self.color = arcade.color.RED
 
@@ -40,6 +40,8 @@ class UnitSprite(arcade.Sprite):
         else:
             self.current_texture = 0
             self.texture = self.textures[0]
+
+        self.sync_from_model()
 
     def _animate(self, delta_time, start_frame, end_frame):
         """Простая анимация по кадрам"""
