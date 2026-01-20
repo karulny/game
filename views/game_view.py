@@ -18,6 +18,7 @@ class GameView(arcade.View):
         # Юниты
         self.unit_sprites = arcade.SpriteList()
         self.scene.add_sprite_list("Units", sprite_list=self.unit_sprites)
+        self.setup()
 
     def setup(self):
         """Создаём Sprite для каждой модели"""
@@ -32,7 +33,6 @@ class GameView(arcade.View):
             hit_box_algorithm=arcade.hitbox.algo_detailed
         )
 
-
         for unit_model in self.game_state.units:
             sprite = UnitSprite(unit_model, textures)
             self.unit_sprites.append(sprite)
@@ -43,14 +43,14 @@ class GameView(arcade.View):
 
         self._draw_unit_stats()
 
-
-    def on_update(self, dt):
+    def on_update(self, delta_time):
         # Удаляем мертвых из логики модели
+        self.game_state.update(delta_time)
         self.game_state.units = [u for u in self.game_state.units if u.hp > 0]
-        
+
         # Обновляем спрайты (они сами себя удалят, если hp <= 0)
-        self.unit_sprites.update()
-            
+        self.unit_sprites.update(delta_time)
+
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         """Обработка кликов"""
         if button == arcade.MOUSE_BUTTON_LEFT:
@@ -109,23 +109,6 @@ class GameView(arcade.View):
                     # Двигаться к точке
                     self.input_controller.on_mouse_press(x, y, button)
 
-    def draw_unit(self, unit):
-        """Рисуем круг юнита"""
-        color = arcade.color.BLUE if unit.team == 0 else arcade.color.GREEN
-
-        # Подсветка если юнит атакует
-        if unit.state == UnitState.ATTACK:
-            color = arcade.color.ORANGE
-
-        # arcade.draw_circle_filled(unit.x, unit.y, unit.radius, color)
-
-        # Обводка для выбранного
-        if self.game_state.selected_unit == unit:
-            arcade.draw_circle_outline(
-                unit.x, unit.y,
-                unit.radius + 3,
-                arcade.color.WHITE, 3
-            )
     @staticmethod
     def _draw_health_bar(unit):
         """Рисуем HP бар над юнитом"""
