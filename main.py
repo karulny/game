@@ -1,11 +1,11 @@
 import arcade
 
-from model.game_map import GameMapModel
-from model.game_state import GameState
-from model.unit_model import UnitModel
+from models.game_map import GameMapModel
+from models.game_state import GameState
+from models.unit_model import UnitModel
 
-from controller.input_controller import InputController
-from view.game_view import GameView
+from controllers.input_controller import InputController
+from views.game_view import GameView
 
 
 SCREEN_WIDTH = 1280
