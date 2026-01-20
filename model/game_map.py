@@ -1,4 +1,4 @@
-import arcade, pprint
+import arcade
 
 NAME_OF_IMPASSABLE_LAYER = "Water"
 NAME_OF_OBJECT_LAYER = "Objects"

@@ -27,10 +27,11 @@ class GameView(arcade.View):
 
         textures = spritesheet.get_texture_grid(
             size=(32, 32),
-            columns=7,
+            columns=4,
             count=7,
             hit_box_algorithm=arcade.hitbox.algo_detailed
         )
+
 
         for unit_model in self.game_state.units:
             sprite = UnitSprite(unit_model, textures)
@@ -40,43 +41,16 @@ class GameView(arcade.View):
         self.clear()
         self.scene.draw()
 
-        # Рисуем юнитов (круги для отладки)
-        for unit in self.game_state.units:
-            self.draw_unit(unit)
+        self._draw_unit_stats()
 
-            # Линия к цели движения
-            if unit.state == UnitState.MOVE:
-                arcade.draw_line(
-                    unit.x, unit.y,
-                    unit.target_x, unit.target_y,
-                    arcade.color.YELLOW, 2
-                )
-
-            # Линия атаки
-            elif unit.state == UnitState.ATTACK and unit.target_enemy:
-                arcade.draw_line(
-                    unit.x, unit.y,
-                    unit.target_enemy.x, unit.target_enemy.y,
-                    arcade.color.RED, 3
-                )
-
-            # Круг радиуса атаки для выбранного юнита
-            if self.game_state.selected_unit == unit:
-                arcade.draw_circle_outline(
-                    unit.x, unit.y,
-                    unit.attack_range,
-                    arcade.color.RED_ORANGE, 2
-                )
-
-        # HP бары
-        for unit in self.game_state.units:
-            self.draw_health_bar(unit)
 
     def on_update(self, dt):
-        """Обновление спрайтов"""
-        for sprite in self.unit_sprites:
-            sprite.update(dt)
-
+        # Удаляем мертвых из логики модели
+        self.game_state.units = [u for u in self.game_state.units if u.hp > 0]
+        
+        # Обновляем спрайты (они сами себя удалят, если hp <= 0)
+        self.unit_sprites.update()
+            
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         """Обработка кликов"""
         if button == arcade.MOUSE_BUTTON_LEFT:
@@ -143,7 +117,7 @@ class GameView(arcade.View):
         if unit.state == UnitState.ATTACK:
             color = arcade.color.ORANGE
 
-        arcade.draw_circle_filled(unit.x, unit.y, unit.radius, color)
+        # arcade.draw_circle_filled(unit.x, unit.y, unit.radius, color)
 
         # Обводка для выбранного
         if self.game_state.selected_unit == unit:
@@ -152,8 +126,8 @@ class GameView(arcade.View):
                 unit.radius + 3,
                 arcade.color.WHITE, 3
             )
-
-    def draw_health_bar(self, unit):
+    @staticmethod
+    def _draw_health_bar(unit):
         """Рисуем HP бар над юнитом"""
         bar_width = 30
         bar_height = 4
@@ -174,3 +148,29 @@ class GameView(arcade.View):
                y - bar_height / 2, y + bar_height / 2,
             arcade.color.GREEN
         )
+
+    def _draw_unit_stats(self):
+        for unit in self.game_state.units:
+            self._draw_health_bar(unit)
+            if unit.state == UnitState.MOVE:
+                arcade.draw_line(
+                    unit.x, unit.y,
+                    unit.target_x, unit.target_y,
+                    arcade.color.YELLOW, 2
+                )
+
+            # Линия атаки
+            elif unit.state == UnitState.ATTACK and unit.target_enemy:
+                arcade.draw_line(
+                    unit.x, unit.y,
+                    unit.target_enemy.x, unit.target_enemy.y,
+                    arcade.color.RED, 3
+                )
+
+            # Круг радиуса атаки для выбранного юнита
+            if self.game_state.selected_unit == unit:
+                arcade.draw_circle_outline(
+                    unit.x, unit.y,
+                    unit.attack_range,
+                    arcade.color.RED_ORANGE, 2
+                )
