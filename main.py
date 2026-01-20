@@ -48,12 +48,14 @@ class GameWindow(arcade.Window):
             input_controller=self.input_controller,
             game_model=self.game_map_model
         )
+        self.game_view.setup()
 
     def on_draw(self):
         self.clear()
         self.game_view.on_draw()
 
     def on_update(self, delta_time):
+        self.game_view.on_update(delta_time)
         self.game_state.update(delta_time)
 
     def on_mouse_press(self, x, y, button, modifiers):

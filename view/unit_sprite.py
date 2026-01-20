@@ -10,7 +10,7 @@ class UnitSprite(arcade.Sprite):
         self.model = model
         self.textures = textures
         self.texture = textures[0]
-        self.scale = 2.0
+        self.scale = 1.0
 
         # Анимация
         self.current_texture = 0
@@ -29,6 +29,8 @@ class UnitSprite(arcade.Sprite):
         # Синхронизация позиции
         self.center_x = self.model.x
         self.center_y = self.model.y
+        if self.model.hp <= 0:
+            self.remove_from_sprite_lists()
 
         # Анимация в зависимости от состояния
         if self.model.state == UnitState.MOVE:

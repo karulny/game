@@ -27,10 +27,11 @@ class GameView(arcade.View):
 
         textures = spritesheet.get_texture_grid(
             size=(32, 32),
-            columns=7,
+            columns=4,
             count=7,
             hit_box_algorithm=arcade.hitbox.algo_detailed
         )
+
 
         for unit_model in self.game_state.units:
             sprite = UnitSprite(unit_model, textures)
@@ -44,10 +45,12 @@ class GameView(arcade.View):
 
 
     def on_update(self, dt):
-        """Обновление спрайтов"""
-        for sprite in self.unit_sprites:
-            sprite.update(dt)
-
+        # Удаляем мертвых из логики модели
+        self.game_state.units = [u for u in self.game_state.units if u.hp > 0]
+        
+        # Обновляем спрайты (они сами себя удалят, если hp <= 0)
+        self.unit_sprites.update()
+            
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         """Обработка кликов"""
         if button == arcade.MOUSE_BUTTON_LEFT:
@@ -114,7 +117,7 @@ class GameView(arcade.View):
         if unit.state == UnitState.ATTACK:
             color = arcade.color.ORANGE
 
-        arcade.draw_circle_filled(unit.x, unit.y, unit.radius, color)
+        # arcade.draw_circle_filled(unit.x, unit.y, unit.radius, color)
 
         # Обводка для выбранного
         if self.game_state.selected_unit == unit:
