@@ -1,6 +1,6 @@
 import arcade
-from view.unit_sprite import UnitSprite
-from model.unit_model import UnitState
+from views.unit_sprite import UnitSprite
+from models.unit_model import UnitState
 
 
 class GameView(arcade.View):
