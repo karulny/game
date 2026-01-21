@@ -1,9 +1,15 @@
+"""
+Игровое представление - отрисовка и обработка ввода
+"""
 import arcade
-from views.unit_sprite import UnitSprite
-from models.unit_model import UnitState
+from unit_sprite import UnitSprite
+from unit import UnitState
+from config import CROSSBOWMEN_SPRITESHEET
 
 
 class GameView(arcade.View):
+    """Главное игровое представление"""
+
     def __init__(self, tile_map, game_state, game_model, input_controller):
         super().__init__()
 
@@ -21,10 +27,8 @@ class GameView(arcade.View):
         self.setup()
 
     def setup(self):
-        """Создаём Sprite для каждой модели"""
-        spritesheet = arcade.load_spritesheet(
-            "resources/units/crossbowmen.png"
-        )
+        """Создание Sprite для каждой модели"""
+        spritesheet = arcade.load_spritesheet(CROSSBOWMEN_SPRITESHEET)
 
         textures = spritesheet.get_texture_grid(
             size=(32, 32),
@@ -38,80 +42,87 @@ class GameView(arcade.View):
             self.unit_sprites.append(sprite)
 
     def on_draw(self):
+        """Отрисовка игры"""
         self.clear()
         self.scene.draw()
-
         self._draw_unit_stats()
 
     def on_update(self, delta_time):
+        """Обновление логики игры"""
         # Удаляем мертвых из логики модели
         self.game_state.update(delta_time)
         self.game_state.units = [u for u in self.game_state.units if u.hp > 0]
 
-        # Обновляем спрайты (они сами себя удалят, если hp <= 0)
+        # Обновляем спрайты
         self.unit_sprites.update(delta_time)
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
-        """Обработка кликов"""
+        """Обработка кликов мыши"""
         if button == arcade.MOUSE_BUTTON_LEFT:
-            # ЛКМ - выбор юнита (по кругу радиуса)
-            clicked_unit = None
-
-            for unit_model in self.game_state.units:
-                dx = x - unit_model.x
-                dy = y - unit_model.y
-                dist = (dx * dx + dy * dy) ** 0.5
-
-                if dist <= unit_model.radius:
-                    clicked_unit = unit_model
-                    break
-
-            if clicked_unit:
-                # Выбираем только своих юнитов (team 1)
-                if clicked_unit.team == 1:
-                    # Находим соответствующий спрайт
-                    for sprite in self.unit_sprites:
-                        if sprite.model == clicked_unit:
-                            self.input_controller.select_unit(sprite)
-                            break
-            else:
-                # Клик по пустому месту - сброс выделения
-                if self.input_controller.selected_unit:
-                    self.input_controller.selected_unit.color = arcade.color.WHITE
-                    self.input_controller.selected_unit = None
-                    self.game_state.selected_unit = None
-
+            self._handle_left_click(x, y)
         elif button == arcade.MOUSE_BUTTON_RIGHT:
-            # ПКМ - команда на движение/атаку
-            if self.input_controller.selected_unit:
-                # Проверяем, кликнули ли по вражескому юниту
-                clicked_enemy = None
+            self._handle_right_click(x, y)
 
-                for unit_model in self.game_state.units:
-                    if unit_model.team == 1:  # Пропускаем своих
-                        continue
+    def _handle_left_click(self, x: int, y: int):
+        """Обработка ЛКМ - выбор юнита"""
+        clicked_unit = None
 
-                    dx = x - unit_model.x
-                    dy = y - unit_model.y
-                    dist = (dx * dx + dy * dy) ** 0.5
+        for unit_model in self.game_state.units:
+            dx = x - unit_model.x
+            dy = y - unit_model.y
+            dist = (dx * dx + dy * dy) ** 0.5
 
-                    if dist <= unit_model.radius:
-                        clicked_enemy = unit_model
+            if dist <= unit_model.radius:
+                clicked_unit = unit_model
+                break
+
+        if clicked_unit:
+            # Выбираем только своих юнитов (team 1)
+            if clicked_unit.team == 1:
+                for sprite in self.unit_sprites:
+                    if sprite.model == clicked_unit:
+                        self.input_controller.select_unit(sprite)
                         break
+        else:
+            # Клик по пустому месту - сброс выделения
+            if self.input_controller.selected_unit:
+                self.input_controller.selected_unit.color = arcade.color.WHITE
+                self.input_controller.selected_unit = None
+                self.game_state.selected_unit = None
 
-                if clicked_enemy:
-                    # Атаковать врага
-                    selected_model = self.input_controller.selected_unit.model
-                    selected_model.target_enemy = clicked_enemy
-                    selected_model.state = UnitState.ATTACK
-                    print(f"Атака врага!")
-                else:
-                    # Двигаться к точке
-                    self.input_controller.on_mouse_press(x, y, button)
+    def _handle_right_click(self, x: int, y: int):
+        """Обработка ПКМ - команда на движение/атаку"""
+        if not self.input_controller.selected_unit:
+            return
+
+        # Проверяем клик по вражескому юниту
+        clicked_enemy = None
+
+        for unit_model in self.game_state.units:
+            if unit_model.team == 1:  # Пропускаем своих
+                continue
+
+            dx = x - unit_model.x
+            dy = y - unit_model.y
+            dist = (dx * dx + dy * dy) ** 0.5
+
+            if dist <= unit_model.radius:
+                clicked_enemy = unit_model
+                break
+
+        if clicked_enemy:
+            # Атаковать врага
+            selected_model = self.input_controller.selected_unit.model
+            selected_model.target_enemy = clicked_enemy
+            selected_model.state = UnitState.ATTACK
+            print("Атака врага!")
+        else:
+            # Двигаться к точке
+            self.input_controller.on_mouse_press(x, y, arcade.MOUSE_BUTTON_RIGHT)
 
     @staticmethod
     def _draw_health_bar(unit):
-        """Рисуем HP бар над юнитом"""
+        """Рисует HP бар над юнитом"""
         bar_width = 30
         bar_height = 4
         x = unit.x - bar_width / 2
@@ -133,8 +144,11 @@ class GameView(arcade.View):
         )
 
     def _draw_unit_stats(self):
+        """Отрисовка статистики юнитов"""
         for unit in self.game_state.units:
             self._draw_health_bar(unit)
+
+            # Линия движения
             if unit.state == UnitState.MOVE:
                 arcade.draw_line(
                     unit.x, unit.y,

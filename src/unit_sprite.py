@@ -1,10 +1,15 @@
+"""
+Спрайт юнита - визуальное представление
+"""
 import arcade
-from models.unit_model import UnitState
+from unit import UnitState
 
 PLAYER_ID = 1
 
 
 class UnitSprite(arcade.Sprite):
+    """Визуальное представление юнита с анимацией"""
+
     def __init__(self, model, textures):
         super().__init__()
         self.model = model
@@ -29,14 +34,16 @@ class UnitSprite(arcade.Sprite):
         # Синхронизация позиции
         self.center_x = self.model.x
         self.center_y = self.model.y
+
+        # Удаление при смерти
         if self.model.hp <= 0:
             self.remove_from_sprite_lists()
 
         # Анимация в зависимости от состояния
         if self.model.state == UnitState.MOVE:
-            self._animate(delta_time, 0, 3)  # Текстуры 0-3 для ходьбы
+            self._animate(delta_time, 0, 3)
         elif self.model.state == UnitState.ATTACK:
-            self._animate(delta_time, 4, 6)  # Текстуры 4-6 для атаки
+            self._animate(delta_time, 4, 6)
         else:
             self.current_texture = 0
             self.texture = self.textures[0]

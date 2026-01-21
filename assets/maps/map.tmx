@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="120" height="120" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="1">
  <tileset firstgid="1" name="Overworld" tilewidth="16" tileheight="16" tilecount="1440" columns="40">
-  <image source="gfx/Overworld.png" width="640" height="576"/>
+  <image source="../images/gfx/Overworld.png" width="640" height="576"/>
  </tileset>
  <layer id="1" name="Water" width="120" height="120">
   <data encoding="csv">
