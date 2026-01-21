@@ -1,7 +1,12 @@
+"""
+Контроллер ввода - обработка взаимодействия с юнитами
+"""
 import arcade
 
 
 class InputController:
+    """Обработка пользовательского ввода"""
+
     def __init__(self, game_state):
         self.game_state = game_state
         self.selected_unit = None
@@ -12,10 +17,6 @@ class InputController:
             # ПКМ - команда на движение
             if self.selected_unit:
                 self.selected_unit.model.move_to(x, y)
-
-        elif button == arcade.MOUSE_BUTTON_LEFT:
-            # ЛКМ обрабатывается в game_view
-            pass
 
     def select_unit(self, unit_sprite):
         """Выделение/снятие выделения юнита"""

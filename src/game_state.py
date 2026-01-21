@@ -1,4 +1,6 @@
 class GameState:
+    """Центральное хранилище состояния игры"""
+
     def __init__(self, game_map, tile_width, tile_height):
         self.units = []
         self.selected_unit = None
@@ -7,6 +9,7 @@ class GameState:
         self.tile_height = tile_height
 
     def update(self, delta_time):
+        """Обновление всех юнитов"""
         for unit in self.units[:]:
             if unit.hp <= 0:
                 self.units.remove(unit)
