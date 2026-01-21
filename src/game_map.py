@@ -4,11 +4,11 @@
 import arcade
 
 NAME_OF_IMPASSABLE_LAYER = "Water"
-NAME_OF_OBJECT_LAYER = "Objects"
+NAME_OF_BUILDING_LAYER = "Buildings"
 NAME_OF_TILE_LAYER = "Ground"
 
 
-class GameMapModel:
+class GameMapLoader:
     """Модель карты с сеткой проходимости"""
 
     def __init__(self, tile_map: arcade.TileMap):
@@ -17,10 +17,10 @@ class GameMapModel:
 
         # Создаем сетку проходимости (0 - нельзя, 1 - можно, 2 - здание)
         self.grid = [[0 for x in range(self.width)] for y in range(self.height)]
-
+        self.buildings = []
         # Загружаем данные из слоев карты
         self._parse_map_data(tile_map, NAME_OF_TILE_LAYER, 1)
-        self._parse_map_data(tile_map, NAME_OF_OBJECT_LAYER, 2)
+        self._parse_buildings(tile_map)
 
     def _parse_map_data(self, tile_map: arcade.TileMap, layer_name: str, value: int) -> None:
         """Парсинг слоя и заполнение сетки"""
@@ -45,3 +45,28 @@ class GameMapModel:
         grid_x = int(world_x // tile_width)
         grid_y = int(world_y // tile_height)
         return grid_x, grid_y
+
+    def _parse_buildings(self, tile_map: arcade.TileMap) -> None:
+        layer = tile_map.sprite_lists.get(NAME_OF_BUILDING_LAYER)
+        if not layer:
+            return
+
+        for item in layer:
+            grid_x = int(item.center_x // (tile_map.tile_width * tile_map.scaling))
+            grid_y = int(item.center_y // (tile_map.tile_height * tile_map.scaling))
+
+            if not (0 <= grid_x < self.width and 0 <= grid_y < self.height):
+                continue
+
+            # помечаем клетку как здание
+            self.grid[grid_y][grid_x] = 2
+
+            # читаем свойства тайла
+            tile_props = item.properties or {}
+
+            self.buildings.append({
+                "grid_x": grid_x,
+                "grid_y": grid_y,
+                "type": tile_props.get("building_type"),
+                "owner": tile_props.get("owner", "neutral")
+            })
