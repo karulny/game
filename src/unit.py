@@ -1,14 +1,20 @@
+"""
+Модель юнита - логика поведения и FSM
+"""
 import math
 from enum import Enum
 
 
 class UnitState(Enum):
+    """Состояния конечного автомата юнита"""
     IDLE = 0
     MOVE = 1
     ATTACK = 2
 
 
-class UnitModel:
+class Unit:
+    """Модель юнита с логикой AI и FSM"""
+
     def __init__(self, x: float, y: float, team: int):
         self.x = x
         self.y = y
@@ -35,20 +41,18 @@ class UnitModel:
         self.target_enemy = None
 
     def move_to(self, x: float, y: float):
-        """Команда на движение"""
+        """Команда на движение к точке"""
         self.target_x = x
         self.target_y = y
         self.state = UnitState.MOVE
-        self.target_enemy = None  # Сброс цели атаки
+        self.target_enemy = None
 
     def update(self, delta_time, game_map, units, tile_w, tile_h):
         """Главный апдейт FSM"""
         if self.state == UnitState.MOVE:
             self._update_move(delta_time, game_map, units, tile_w, tile_h)
-
         elif self.state == UnitState.ATTACK:
             self._update_attack(delta_time, units)
-
         elif self.state == UnitState.IDLE:
             self._search_enemy(units)
 
@@ -121,11 +125,10 @@ class UnitModel:
 
         # Цель вне радиуса атаки - преследуем
         if dist > self.attack_range:
-            # Двигаемся к врагу
             self.target_x = self.target_enemy.x
             self.target_y = self.target_enemy.y
 
-            # Небольшое движение в сторону врага
+            # Движение в сторону врага
             dir_x = dx / dist
             dir_y = dy / dist
             self.x += dir_x * self.speed * delta_time

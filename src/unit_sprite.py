@@ -1,10 +1,15 @@
+"""
+Спрайт юнита - визуальное представление
+"""
 import arcade
-from model.unit_model import UnitState
+from unit import UnitState
 
 PLAYER_ID = 1
 
 
 class UnitSprite(arcade.Sprite):
+    """Визуальное представление юнита с анимацией"""
+
     def __init__(self, model, textures):
         super().__init__()
         self.model = model
@@ -20,7 +25,7 @@ class UnitSprite(arcade.Sprite):
     def sync_from_model(self):
         """Синхронизация визуала с моделью"""
         if self.model.team == PLAYER_ID:
-            self.color = arcade.color.WHITE
+            self.color = arcade.color.LIGHT_GREEN
         else:
             self.color = arcade.color.RED
 
@@ -29,17 +34,21 @@ class UnitSprite(arcade.Sprite):
         # Синхронизация позиции
         self.center_x = self.model.x
         self.center_y = self.model.y
+
+        # Удаление при смерти
         if self.model.hp <= 0:
             self.remove_from_sprite_lists()
 
         # Анимация в зависимости от состояния
         if self.model.state == UnitState.MOVE:
-            self._animate(delta_time, 0, 3)  # Текстуры 0-3 для ходьбы
+            self._animate(delta_time, 0, 3)
         elif self.model.state == UnitState.ATTACK:
-            self._animate(delta_time, 4, 6)  # Текстуры 4-6 для атаки
+            self._animate(delta_time, 4, 6)
         else:
             self.current_texture = 0
             self.texture = self.textures[0]
+
+        self.sync_from_model()
 
     def _animate(self, delta_time, start_frame, end_frame):
         """Простая анимация по кадрам"""
