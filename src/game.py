@@ -4,7 +4,7 @@
 import arcade
 from config import MAP_PATH, TILE_SCALING, PLAYER_TEAM, ENEMY_TEAM
 from game_state import GameState
-from game_map import GameMapModel
+from game_map import GameMapLoader
 from unit import Unit
 from input_controller import InputController
 from game_view import GameView
@@ -28,7 +28,7 @@ class Game:
         )
 
         # Создание модели карты
-        game_map_model = GameMapModel(tile_map)
+        game_map_model = GameMapLoader(tile_map)
 
         # Размеры тайлов
         tile_width = tile_map.tile_width * tile_map.scaling
@@ -41,7 +41,10 @@ class Game:
             tile_height=tile_height
         )
 
-        # Добавление начальных юнитов
+        # Добавляем здания из карты в состояние игры
+        game_state.buildings = game_map_model.buildings
+
+        # Добавление начальных юнитов (меньше, чтобы игрок сам их спавнил)
         game_state.units.append(Unit(200, 200, team=PLAYER_TEAM))
         game_state.units.append(Unit(260, 200, team=ENEMY_TEAM))
 

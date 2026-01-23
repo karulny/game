@@ -5,8 +5,6 @@ import arcade
 from game import Game
 from config import SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE
 
-import os
-from src.config import MAP_PATH
 
 
 def main():
@@ -15,10 +13,8 @@ def main():
         width=SCREEN_WIDTH,
         height=SCREEN_HEIGHT,
         title=SCREEN_TITLE,
-        resizable=True
+        resizable=True,
     )
-    print(f"Ищем карту по пути: {MAP_PATH}")
-    print(f"Файл существует: {os.path.exists(MAP_PATH)}")
 
     game = Game(window)
     game.setup()
