@@ -2,6 +2,7 @@
 Модель карты - логика проходимости и тайлов
 """
 import arcade
+from building import Building
 
 NAME_OF_IMPASSABLE_LAYER = "Water"
 NAME_OF_BUILDING_LAYER = "Buildings"
@@ -14,10 +15,12 @@ class GameMapLoader:
     def __init__(self, tile_map: arcade.TileMap):
         self.width = int(tile_map.width)
         self.height = int(tile_map.height)
+        self.tile_map = tile_map
 
         # Создаем сетку проходимости (0 - нельзя, 1 - можно, 2 - здание)
         self.grid = [[0 for x in range(self.width)] for y in range(self.height)]
         self.buildings = []
+
         # Загружаем данные из слоев карты
         self._parse_map_data(tile_map, NAME_OF_TILE_LAYER, 1)
         self._parse_buildings(tile_map)
@@ -47,6 +50,7 @@ class GameMapLoader:
         return grid_x, grid_y
 
     def _parse_buildings(self, tile_map: arcade.TileMap) -> None:
+        """Парсинг зданий с карты"""
         layer = tile_map.sprite_lists.get(NAME_OF_BUILDING_LAYER)
         if not layer:
             return
@@ -63,10 +67,14 @@ class GameMapLoader:
 
             # читаем свойства тайла
             tile_props = item.properties or {}
+            building_type = tile_props.get("building_type", "barracks")
+            owner = tile_props.get("owner", "player")
 
-            self.buildings.append({
-                "grid_x": grid_x,
-                "grid_y": grid_y,
-                "type": tile_props.get("building_type"),
-                "owner": tile_props.get("owner", "neutral")
-            })
+            # Создаем объект здания
+            building = Building(grid_x, grid_y, building_type, owner)
+
+            # Сохраняем мировые координаты
+            building.world_x = item.center_x
+            building.world_y = item.center_y
+
+            self.buildings.append(building)
