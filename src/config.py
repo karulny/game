@@ -44,10 +44,10 @@ ANIMATION_SPEED = 0.1
 WALK_FRAMES = (0, 3)
 ATTACK_FRAMES = (4, 6)
 
-# Экономика (НОВОЕ!)
+# Экономика
 STARTING_MONEY = 200
 UNIT_COST = 50
 MONEY_PER_SECOND = 10  # Пассивный доход
 
-# AI противника (НОВОЕ!)
+# AI противника
 ENEMY_SPAWN_INTERVAL = 5.0  # Враг спавнит юнита каждые 5 секунд

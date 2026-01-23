@@ -2,6 +2,7 @@ import arcade
 from unit_sprite import UnitSprite
 from unit import Unit, UnitState
 from config import CROSSBOWMEN_SPRITESHEET, UNIT_COST, PLAYER_TEAM
+from enemy_ai import EnemyAI
 
 
 class GameView(arcade.View):
@@ -42,6 +43,9 @@ class GameView(arcade.View):
             hit_box_algorithm=arcade.hitbox.algo_detailed
         )
 
+        # AI противника (НОВОЕ!)
+        self.enemy_ai = EnemyAI(game_state)
+
         self.setup()
 
     def setup(self):
@@ -68,6 +72,9 @@ class GameView(arcade.View):
         """Обновление логики игры"""
         self._update_camera(delta_time)
         self.game_state.update(delta_time)
+
+        # Обновляем AI противника (НОВОЕ!)
+        self.enemy_ai.update(delta_time, self.unit_textures, self.unit_sprites)
 
         # Удаляем мертвых
         self.game_state.units = [u for u in self.game_state.units if u.hp > 0]
@@ -244,20 +251,31 @@ class GameView(arcade.View):
                 )
 
     def _draw_buildings(self):
-        """Отрисовка зданий (подсветка)"""
+        """Отрисовка зданий с ПОЛУПРОЗРАЧНОЙ ЗАЛИВКОЙ"""
         for building in self.game_state.buildings:
+            # Выбираем цвет в зависимости от владельца
             if building.owner == "player":
-                color = arcade.color.GREEN
+                outline_color = arcade.color.GREEN
+                fill_color = (0, 255, 0, 80)  # Зеленый полупрозрачный
             elif building.owner == "enemy":
-                color = arcade.color.RED
+                outline_color = arcade.color.RED
+                fill_color = (255, 0, 0, 80)  # Красный полупрозрачный
             else:
-                color = arcade.color.GRAY
+                outline_color = arcade.color.GRAY
+                fill_color = (128, 128, 128, 80)  # Серый полупрозрачный
 
-            # Рисуем квадрат вокруг здания
-            arcade.draw_lbwh_rectangle_filled(
+            # ЗАЛИВКА здания (полупрозрачная)
+            arcade.draw_rectangle_filled(
                 building.world_x, building.world_y,
                 32, 32,
-                color,
+                fill_color
+            )
+
+            # ОБВОДКА здания (яркая)
+            arcade.draw_rectangle_outline(
+                building.world_x, building.world_y,
+                32, 32,
+                outline_color, 3  # Толще линия
             )
 
             # Показываем кулдаун
@@ -266,31 +284,42 @@ class GameView(arcade.View):
                 arcade.draw_text(
                     cooldown_text,
                     building.world_x - 15, building.world_y + 20,
-                    arcade.color.YELLOW, 10
+                    arcade.color.YELLOW, 10, bold=True
                 )
 
     def _draw_ui(self):
-        """Отрисовка интерфейса (деньги и т.д.)"""
+        """Отрисовка интерфейса (деньги и статистика)"""
         # Фон панели
         arcade.draw_lrbt_rectangle_filled(
-            0, 250, self.window.height - 60, self.window.height,
-            arcade.color.BLACK
+            0, 350, self.window.height - 80, self.window.height,
+            (0, 0, 0, 200)  # Полупрозрачный черный
         )
 
         # Текст денег
-        money_text = f"Деньги: ${self.game_state.money}"
+        money_text = f"💰 Деньги: ${self.game_state.money}"
         arcade.draw_text(
             money_text,
             10, self.window.height - 30,
             arcade.color.GOLD, 20, bold=True
         )
 
+        # Статистика юнитов рвди смеха смайлы прямо смешные брал
+        player_units = len([u for u in self.game_state.units if u.team == 1])
+        enemy_units = len([u for u in self.game_state.units if u.team == 0])
+
+        stats_text = f"👥 Твои: {player_units}  |  🔴 Враги: {enemy_units}"
+        arcade.draw_text(
+            stats_text,
+            10, self.window.height - 55,
+            arcade.color.WHITE, 14
+        )
+
         # Подсказка
-        hint_text = "ЛКМ по зданию - спавн юнита (50$)"
+        hint_text = "ЛКМ по 🟩 зданию = спавн юнита (50$)"
         arcade.draw_text(
             hint_text,
-            10, self.window.height - 55,
-            arcade.color.WHITE, 12
+            10, self.window.height - 75,
+            arcade.color.LIGHT_GRAY, 12
         )
 
     def _update_camera(self, delta_time):
