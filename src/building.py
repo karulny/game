@@ -22,6 +22,10 @@ class Building:
         self.world_x = 0
         self.world_y = 0
 
+        # HP здания (для будущих фич)
+        self.hp = 500
+        self.max_hp = 500
+
     def update(self, delta_time):
         """Обновление кулдауна"""
         if self.spawn_cooldown > 0:
@@ -29,8 +33,14 @@ class Building:
 
     def can_spawn(self):
         """Проверка, можно ли спавнить юнита"""
-        return self.can_spawn_units and self.spawn_cooldown <= 0
+        return self.can_spawn_units and self.spawn_cooldown <= 0 and self.hp > 0
 
     def start_spawn(self):
         """Начать спавн юнита"""
         self.spawn_cooldown = self.spawn_delay
+
+    def take_damage(self, damage):
+        """Получить урон (для будущих фич)"""
+        self.hp -= damage
+        if self.hp < 0:
+            self.hp = 0
