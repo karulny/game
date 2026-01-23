@@ -1,7 +1,8 @@
 import arcade
 from unit_sprite import UnitSprite
-from unit import UnitState
-from config import CROSSBOWMEN_SPRITESHEET
+from unit import Unit, UnitState
+from config import CROSSBOWMEN_SPRITESHEET, UNIT_COST, PLAYER_TEAM
+from enemy_ai import EnemyAI
 
 
 class GameView(arcade.View):
@@ -13,12 +14,13 @@ class GameView(arcade.View):
         self.game_state = game_state
         self.game_map = game_model
         self.input_controller = input_controller
+
         # Камера
         self.camera = arcade.camera.Camera2D()
         self.camera_speed = 500
         self.camera_zoom = 1.0
 
-        # Границы карты для создания 'мертвой зоны камеры'
+        # Границы карты
         self.map_width = tile_map.width * tile_map.tile_width * tile_map.scaling
         self.map_height = tile_map.height * tile_map.tile_height * tile_map.scaling
 
@@ -28,35 +30,53 @@ class GameView(arcade.View):
         # Юниты
         self.unit_sprites = arcade.SpriteList()
         self.scene.add_sprite_list("Units", sprite_list=self.unit_sprites)
-        self.setup()
 
-    def setup(self):
-        """Создание Sprite для каждой модели"""
+        # UI камера (для интерфейса)
+        self.ui_camera = arcade.camera.Camera2D()
+
+        # Текстуры для юнитов
         spritesheet = arcade.load_spritesheet(CROSSBOWMEN_SPRITESHEET)
-
-        textures = spritesheet.get_texture_grid(
+        self.unit_textures = spritesheet.get_texture_grid(
             size=(32, 32),
             columns=4,
             count=7,
             hit_box_algorithm=arcade.hitbox.algo_detailed
         )
 
+        # AI противника (НОВОЕ!)
+        self.enemy_ai = EnemyAI(game_state)
+
+        self.setup()
+
+    def setup(self):
+        """Создание Sprite для каждой модели"""
         for unit_model in self.game_state.units:
-            sprite = UnitSprite(unit_model, textures)
+            sprite = UnitSprite(unit_model, self.unit_textures)
             self.unit_sprites.append(sprite)
 
     def on_draw(self):
         """Отрисовка игры"""
         self.clear()
+
+        # Рисуем игровой мир
         self.camera.use()
         self.scene.draw()
         self._draw_unit_stats()
+        # self._draw_buildings()
+
+        # Рисуем UI поверх всего
+        self.ui_camera.use()
+        self._draw_ui()
 
     def on_update(self, delta_time):
         """Обновление логики игры"""
         self._update_camera(delta_time)
-        # Удаляем мертвых из логики модели
         self.game_state.update(delta_time)
+
+        # Обновляем AI противника (НОВОЕ!)
+        self.enemy_ai.update(delta_time, self.unit_textures, self.unit_sprites)
+
+        # Удаляем мертвых
         self.game_state.units = [u for u in self.game_state.units if u.hp > 0]
 
         # Обновляем спрайты
@@ -65,13 +85,23 @@ class GameView(arcade.View):
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         """Обработка кликов мыши"""
         world_x, world_y, world_z = self.camera.unproject((x, y))
+
         if button == arcade.MOUSE_BUTTON_LEFT:
             self._handle_left_click(world_x, world_y)
         elif button == arcade.MOUSE_BUTTON_RIGHT:
             self._handle_right_click(world_x, world_y)
 
     def _handle_left_click(self, x: int, y: int):
-        """Обработка ЛКМ - выбор юнита"""
+        """Обработка ЛКМ - выбор юнита или клик по зданию"""
+        # Сначала проверяем клик по зданию
+        clicked_building = self._get_building_at(x, y)
+
+        if clicked_building and clicked_building.owner == "player":
+            # Попытка спавнить юнита
+            self._try_spawn_unit(clicked_building)
+            return
+
+        # Если не попали по зданию, проверяем юнитов
         clicked_unit = None
 
         for unit_model in self.game_state.units:
@@ -84,8 +114,8 @@ class GameView(arcade.View):
                 break
 
         if clicked_unit:
-            # Выбираем только своих юнитов (team 1)
-            if clicked_unit.team == 1:
+            # Выбираем только своих юнитов
+            if clicked_unit.team == PLAYER_TEAM:
                 for sprite in self.unit_sprites:
                     if sprite.model == clicked_unit:
                         self.input_controller.select_unit(sprite)
@@ -106,7 +136,7 @@ class GameView(arcade.View):
         clicked_enemy = None
 
         for unit_model in self.game_state.units:
-            if unit_model.team == 1:  # Пропускаем своих
+            if unit_model.team == PLAYER_TEAM:
                 continue
 
             dx = x - unit_model.x
@@ -127,7 +157,47 @@ class GameView(arcade.View):
             # Двигаться к точке
             self.input_controller.on_mouse_press(x, y, arcade.MOUSE_BUTTON_RIGHT)
 
-    # Тут статик метод не из-за нейронки, а из-за того что pycharm ругался
+    def _get_building_at(self, x: float, y: float):
+        """Получить здание в точке клика"""
+        for building in self.game_state.buildings:
+            # Проверяем попадание в область здания (примерно 32x32 пикселя)
+            dx = abs(x - building.world_x)
+            dy = abs(y - building.world_y)
+
+            if dx < 32 and dy < 32:
+                return building
+        return None
+
+    def _try_spawn_unit(self, building):
+        """Попытка создать юнита в здании"""
+        # Проверяем условия
+        if not building.can_spawn():
+            print("Здание на кулдауне!")
+            return
+
+        if not self.game_state.can_afford(UNIT_COST):
+            print(f"Недостаточно денег! Нужно: {UNIT_COST}, есть: {self.game_state.money}")
+            return
+
+        # Тратим деньги
+        self.game_state.spend_money(UNIT_COST)
+
+        # Создаем юнита рядом со зданием
+        spawn_x = building.world_x + 40
+        spawn_y = building.world_y
+
+        new_unit = Unit(spawn_x, spawn_y, team=PLAYER_TEAM)
+        self.game_state.units.append(new_unit)
+
+        # Создаем спрайт
+        sprite = UnitSprite(new_unit, self.unit_textures)
+        self.unit_sprites.append(sprite)
+
+        # Запускаем кулдаун здания
+        building.start_spawn()
+
+        print(f"Юнит создан! Осталось денег: {self.game_state.money}")
+
     @staticmethod
     def _draw_health_bar(unit):
         """Рисует HP бар над юнитом"""
@@ -180,10 +250,80 @@ class GameView(arcade.View):
                     arcade.color.RED_ORANGE, 2
                 )
 
+    # def _draw_buildings(self):
+    #     """Отрисовка зданий с ПОЛУПРОЗРАЧНОЙ ЗАЛИВКОЙ"""
+    #     for building in self.game_state.buildings:
+    #         # Выбираем цвет в зависимости от владельца
+    #         if building.owner == "player":
+    #             outline_color = arcade.color.GREEN
+    #             fill_color = (0, 255, 0, 80)  # Зеленый полупрозрачный
+    #         elif building.owner == "enemy":
+    #             outline_color = arcade.color.RED
+    #             fill_color = (255, 0, 0, 80)  # Красный полупрозрачный
+    #         else:
+    #             outline_color = arcade.color.GRAY
+    #             fill_color = (128, 128, 128, 80)  # Серый полупрозрачный
+    #
+    #         # ЗАЛИВКА здания (полупрозрачная)
+    #         arcade.draw_lbwh_rectangle_filled(
+    #             building.world_x, building.world_y,
+    #             32, 32,
+    #             fill_color
+    #         )
+    #
+    #         # ОБВОДКА здания (яркая)
+    #         arcade.draw_lbwh_rectangle_filled(
+    #             building.world_x, building.world_y,
+    #             32, 32,
+    #             outline_color  # Толще линия
+    #         )
+    #
+    #         # Показываем кулдаун
+    #         if building.spawn_cooldown > 0:
+    #             cooldown_text = f"{building.spawn_cooldown:.1f}s"
+    #             arcade.draw_text(
+    #                 cooldown_text,
+    #                 building.world_x - 15, building.world_y + 20,
+    #                 arcade.color.YELLOW, 10, bold=True
+    #             )
+
+    def _draw_ui(self):
+        """Отрисовка интерфейса (деньги и статистика)"""
+        # Фон панели
+        arcade.draw_lrbt_rectangle_filled(
+            0, 350, self.window.height - 80, self.window.height,
+            (0, 0, 0, 200)  # Полупрозрачный черный
+        )
+
+        # Текст денег
+        money_text = f"💰 Деньги: ${self.game_state.money}"
+        arcade.draw_text(
+            money_text,
+            10, self.window.height - 30,
+            arcade.color.GOLD, 20, bold=True
+        )
+
+        # Статистика юнитов рвди смеха смайлы прямо смешные брал
+        player_units = len([u for u in self.game_state.units if u.team == 1])
+        enemy_units = len([u for u in self.game_state.units if u.team == 0])
+
+        stats_text = f"👥 Твои: {player_units}  |  🔴 Враги: {enemy_units}"
+        arcade.draw_text(
+            stats_text,
+            10, self.window.height - 55,
+            arcade.color.WHITE, 14
+        )
+
+        # Подсказка
+        hint_text = "ЛКМ по 🟩 зданию = спавн юнита (50$)"
+        arcade.draw_text(
+            hint_text,
+            10, self.window.height - 75,
+            arcade.color.LIGHT_GRAY, 12
+        )
+
     def _update_camera(self, delta_time):
         """Управление камерой: WASD + края экрана + зум"""
-
-        # Движение WASD
         keys = self.window.keyboard
         dx, dy = 0, 0
 
@@ -192,10 +332,9 @@ class GameView(arcade.View):
         if keys[arcade.key.A]: dx -= self.camera_speed * delta_time
         if keys[arcade.key.D]: dx += self.camera_speed * delta_time
 
-        # Движение к краям экрана мышью (просто ради удобства пользователя (такая же штука есть в HOI4
+        # Движение к краям экрана мышью
         mouse_x, mouse_y = self.window.mouse["x"], self.window.mouse["y"]
         edge = 20
-
 
         if mouse_x < edge:
             dx -= self.camera_speed * delta_time
@@ -212,7 +351,7 @@ class GameView(arcade.View):
             self.camera.position[1] + dy
         )
 
-        # Ограничить границами(пока что только для fullscreen)
+        # Ограничить границами
         hw = self.window.width / 2 / self.camera_zoom
         hh = self.window.height / 2 / self.camera_zoom
 
@@ -223,7 +362,6 @@ class GameView(arcade.View):
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         """Зум колесиком"""
-        # сделано тк модельки юнитов малы, а саму штуку реализовать очень просто было
         if scroll_y > 0:
             self.camera_zoom = min(2.0, self.camera_zoom + 0.1)
         else:
