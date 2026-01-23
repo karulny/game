@@ -41,5 +41,13 @@ SPRITE_SCALE = 2.0
 
 # Анимация
 ANIMATION_SPEED = 0.1
-WALK_FRAMES = (0, 3)  # start, end
+WALK_FRAMES = (0, 3)
 ATTACK_FRAMES = (4, 6)
+
+# Экономика
+STARTING_MONEY = 200
+UNIT_COST = 50
+MONEY_PER_SECOND = 10  # Пассивный доход
+
+# AI противника
+ENEMY_SPAWN_INTERVAL = 5.0  # Враг спавнит юнита каждые 5 секунд
