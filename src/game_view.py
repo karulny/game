@@ -62,7 +62,7 @@ class GameView(arcade.View):
         self.camera.use()
         self.scene.draw()
         self._draw_unit_stats()
-        self._draw_buildings()
+        # self._draw_buildings()
 
         # Рисуем UI поверх всего
         self.ui_camera.use()
@@ -250,42 +250,42 @@ class GameView(arcade.View):
                     arcade.color.RED_ORANGE, 2
                 )
 
-    def _draw_buildings(self):
-        """Отрисовка зданий с ПОЛУПРОЗРАЧНОЙ ЗАЛИВКОЙ"""
-        for building in self.game_state.buildings:
-            # Выбираем цвет в зависимости от владельца
-            if building.owner == "player":
-                outline_color = arcade.color.GREEN
-                fill_color = (0, 255, 0, 80)  # Зеленый полупрозрачный
-            elif building.owner == "enemy":
-                outline_color = arcade.color.RED
-                fill_color = (255, 0, 0, 80)  # Красный полупрозрачный
-            else:
-                outline_color = arcade.color.GRAY
-                fill_color = (128, 128, 128, 80)  # Серый полупрозрачный
-
-            # ЗАЛИВКА здания (полупрозрачная)
-            arcade.draw_rectangle_filled(
-                building.world_x, building.world_y,
-                32, 32,
-                fill_color
-            )
-
-            # ОБВОДКА здания (яркая)
-            arcade.draw_rectangle_outline(
-                building.world_x, building.world_y,
-                32, 32,
-                outline_color, 3  # Толще линия
-            )
-
-            # Показываем кулдаун
-            if building.spawn_cooldown > 0:
-                cooldown_text = f"{building.spawn_cooldown:.1f}s"
-                arcade.draw_text(
-                    cooldown_text,
-                    building.world_x - 15, building.world_y + 20,
-                    arcade.color.YELLOW, 10, bold=True
-                )
+    # def _draw_buildings(self):
+    #     """Отрисовка зданий с ПОЛУПРОЗРАЧНОЙ ЗАЛИВКОЙ"""
+    #     for building in self.game_state.buildings:
+    #         # Выбираем цвет в зависимости от владельца
+    #         if building.owner == "player":
+    #             outline_color = arcade.color.GREEN
+    #             fill_color = (0, 255, 0, 80)  # Зеленый полупрозрачный
+    #         elif building.owner == "enemy":
+    #             outline_color = arcade.color.RED
+    #             fill_color = (255, 0, 0, 80)  # Красный полупрозрачный
+    #         else:
+    #             outline_color = arcade.color.GRAY
+    #             fill_color = (128, 128, 128, 80)  # Серый полупрозрачный
+    #
+    #         # ЗАЛИВКА здания (полупрозрачная)
+    #         arcade.draw_lbwh_rectangle_filled(
+    #             building.world_x, building.world_y,
+    #             32, 32,
+    #             fill_color
+    #         )
+    #
+    #         # ОБВОДКА здания (яркая)
+    #         arcade.draw_lbwh_rectangle_filled(
+    #             building.world_x, building.world_y,
+    #             32, 32,
+    #             outline_color  # Толще линия
+    #         )
+    #
+    #         # Показываем кулдаун
+    #         if building.spawn_cooldown > 0:
+    #             cooldown_text = f"{building.spawn_cooldown:.1f}s"
+    #             arcade.draw_text(
+    #                 cooldown_text,
+    #                 building.world_x - 15, building.world_y + 20,
+    #                 arcade.color.YELLOW, 10, bold=True
+    #             )
 
     def _draw_ui(self):
         """Отрисовка интерфейса (деньги и статистика)"""

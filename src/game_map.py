@@ -50,31 +50,52 @@ class GameMapLoader:
         return grid_x, grid_y
 
     def _parse_buildings(self, tile_map: arcade.TileMap) -> None:
-        """Парсинг зданий с карты"""
-        layer = tile_map.sprite_lists.get(NAME_OF_BUILDING_LAYER)
-        if not layer:
-            return
+        """Парсинг зданий из геометрических объектов Tiled"""
+        self.buildings = []
 
-        for item in layer:
-            grid_x = int(item.center_x // (tile_map.tile_width * tile_map.scaling))
-            grid_y = int(item.center_y // (tile_map.tile_height * tile_map.scaling))
+        # Общая высота карты в пикселях (нужна для конвертации координат Y)
+        map_height_px = tile_map.height * tile_map.tile_height
+        scaling = tile_map.scaling
 
-            if not (0 <= grid_x < self.width and 0 <= grid_y < self.height):
-                continue
+        # Перебираем слои напрямую через внутренний объект tiled_map
+        for layer in tile_map.tiled_map.layers:
+            # Проверяем, что это слой объектов
+                props = layer.properties if layer.properties else {}
 
-            # помечаем клетку как здание
-            self.grid[grid_y][grid_x] = 2
+                # Ищем слои, где прописан building_type
+                if "building_type" in props:
+                    b_type = props.get("building_type")
+                    owner = props.get("owner", "neutral")
 
-            # читаем свойства тайла
-            tile_props = item.properties or {}
-            building_type = tile_props.get("building_type", "barracks")
-            owner = tile_props.get("owner", "player")
+                    print(f"📦 Обработка слоя объектов '{layer.name}': {b_type} ({owner})")
 
-            # Создаем объект здания
-            building = Building(grid_x, grid_y, building_type, owner)
+                    for obj in layer.tiled_objects:
 
-            # Сохраняем мировые координаты
-            building.world_x = item.center_x
-            building.world_y = item.center_y
+                        # Вычисляем центр объекта в мировых координатах
+                        obj_x = obj.coordinates.x
+                        obj_y = obj.coordinates.y
+                        obj_w = obj.size.width
+                        obj_h = obj.size.height
 
-            self.buildings.append(building)
+                        # Центр X: (Лево + Ширина/2) * масштаб
+                        center_x = (obj_x + obj_w / 2) * scaling
+
+                        # Центр Y: (Высота_карты - (Верх + Высота_объекта/2)) * масштаб
+                        center_y = (map_height_px - (obj_y + obj_h / 2)) * scaling
+
+                        # Считаем координаты в сетке (grid)
+                        grid_x = int(center_x // (tile_map.tile_width * scaling))
+                        grid_y = int(center_y // (tile_map.tile_height * scaling))
+
+                        if 0 <= grid_x < self.width and 0 <= grid_y < self.height:
+                            # Помечаем в сетке: 2 - это здание
+                            self.grid[grid_y][grid_x] = 2
+
+                            building = Building(grid_x, grid_y, b_type, owner)
+                            building.world_x = center_x
+                            building.world_y = center_y
+
+                            self.buildings.append(building)
+                            print(f"   🏠 Найдено здание в сетке: {grid_x}:{grid_y}")
+
+        print(f"✅ Успешно загружено зданий: {len(self.buildings)}")

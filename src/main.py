@@ -14,7 +14,6 @@ def main():
         height=SCREEN_HEIGHT,
         title=SCREEN_TITLE,
         resizable=True,
-        fullscreen=True
     )
 
     game = Game(window)
