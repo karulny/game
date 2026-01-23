@@ -41,7 +41,10 @@ class Game:
             tile_height=tile_height
         )
 
-        # Добавление начальных юнитов
+        # Добавляем здания из карты в состояние игры
+        game_state.buildings = game_map_model.buildings
+
+        # Добавление начальных юнитов (меньше, чтобы игрок сам их спавнил)
         game_state.units.append(Unit(200, 200, team=PLAYER_TEAM))
         game_state.units.append(Unit(260, 200, team=ENEMY_TEAM))
 
