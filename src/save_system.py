@@ -1,12 +1,17 @@
 import sqlite3
 import json
 import os
-from config import BASE_DIR
+import sys
 
 
 class SaveSystem:
     def __init__(self):
-        self.db_path = os.path.join(BASE_DIR, "saves", "game.db")
+        if getattr(sys, 'frozen', False):
+            app_dir = os.path.dirname(sys.executable)
+        else:
+            app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+        self.db_path = os.path.join(app_dir, "saves", "game.db")
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_database()
 
@@ -15,17 +20,18 @@ class SaveSystem:
         cursor = conn.cursor()
 
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS saves (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                save_name TEXT NOT NULL,
-                money INTEGER,
-                units_data TEXT,
-                buildings_data TEXT,
-                camera_x REAL,
-                camera_y REAL,
-                save_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
+                       CREATE TABLE IF NOT EXISTS saves
+                       (
+                           id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                           save_name      TEXT NOT NULL,
+                           money          INTEGER,
+                           units_data     TEXT,
+                           buildings_data TEXT,
+                           camera_x       REAL,
+                           camera_y       REAL,
+                           save_date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                       )
+                       """)
 
         conn.commit()
         conn.close()
@@ -56,16 +62,16 @@ class SaveSystem:
         cursor = conn.cursor()
 
         cursor.execute("""
-            INSERT INTO saves (save_name, money, units_data, buildings_data, camera_x, camera_y)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            save_name,
-            game_state.money,
-            json.dumps(units_data),
-            json.dumps(buildings_data),
-            camera_pos[0],
-            camera_pos[1]
-        ))
+                       INSERT INTO saves (save_name, money, units_data, buildings_data, camera_x, camera_y)
+                       VALUES (?, ?, ?, ?, ?, ?)
+                       """, (
+                           save_name,
+                           game_state.money,
+                           json.dumps(units_data),
+                           json.dumps(buildings_data),
+                           camera_pos[0],
+                           camera_pos[1]
+                       ))
 
         conn.commit()
         conn.close()
